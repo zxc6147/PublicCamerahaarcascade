@@ -74,9 +74,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void copyFile(String filename) {
-        String baseDir = Environment.getExternalStorageDirectory().getPath();
-        //Context context = this;
-        //String baseDir = context.getExternalFilesDir(null).getPath();
+
+        //String baseDir = Environment.getExternalStorageDirectory().getPath();
+        String baseDir = getExternalFilesDir(null).toString();
         String pathDir = baseDir + File.separator + filename;
 
         AssetManager assetManager = this.getAssets();
@@ -85,15 +85,29 @@ public class MainActivity extends AppCompatActivity
         OutputStream outputStream = null;
 
         try {
-            Log.d( TAG, "copyFile :: 다음 경로로 파일복사 "+ pathDir);
+            Log.d( "CCCC", "copyFile :: 다음 경로로 파일복사 "+ pathDir);
+
+            Log.d("CCCC", "0");
+
             inputStream = assetManager.open(filename);
+
+            Log.d("CCCC", "0.5");
+
             outputStream = new FileOutputStream(pathDir);
 
+            Log.d("CCCC", "1");
+
             byte[] buffer = new byte[1024];
+
+            Log.d("CCCC", "2");
             int read;
+
+            Log.d("CCCC", "3");
             while ((read = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, read);
             }
+
+            Log.d("CCCC", "4");
             inputStream.close();
             inputStream = null;
             outputStream.flush();

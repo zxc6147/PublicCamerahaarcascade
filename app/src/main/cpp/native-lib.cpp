@@ -18,7 +18,6 @@ Java_com_example_opencvcameraexample_MainActivity_ConvertRGBtoGray(JNIEnv *env, 
     cvtColor(matInput, matResult, COLOR_RGBA2GRAY);
 }
 */
-
 float resize(Mat img_src, Mat &img_resize, int resize_width){
 
 
@@ -43,23 +42,32 @@ float resize(Mat img_src, Mat &img_resize, int resize_width){
 }
 
 
+
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobject thiz,
                                                               jstring cascade_file_name) {
+
     const char *nativeFileNameString = env->GetStringUTFChars(cascade_file_name, 0);
 
 
-    string baseDir("/storage/emulated/0/");
+    string baseDir("/storage/emulated/0/Android/data/com.example.opencvcameraexample/files/");
 
     baseDir.append(nativeFileNameString);
 
-    const char *pathDir = baseDir.c_str();
+    // log
+    std::vector<char> writable(baseDir.begin(), baseDir.end());
+    writable.push_back('\0');
+    char* s = &writable[0];
 
+    __android_log_print(ANDROID_LOG_DEBUG, "AAAA", "%s", s);
+
+    const char *pathDir = baseDir.c_str();
+    // end_log
 
     jlong ret = 0;
 
-    ret = (jlong) new CascadeClassifier(pathDir);
+    ret = (jlong) new CascadeClassifier(baseDir);
 
     if (((CascadeClassifier *) ret)->empty()) {
 
@@ -81,6 +89,8 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
 
 
     return ret;
+
+
 }
 
 extern "C"
@@ -168,4 +178,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         }
 
     }
+
+
 }
