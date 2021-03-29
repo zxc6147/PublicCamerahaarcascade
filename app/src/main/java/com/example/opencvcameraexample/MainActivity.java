@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
@@ -15,11 +16,18 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfRect;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
 
 import java.util.Collections;
 import java.util.List;
 
 import static android.Manifest.permission.CAMERA;
+import static org.opencv.imgproc.Imgproc.rectangle;
 
 
 public class MainActivity extends AppCompatActivity
@@ -127,8 +135,41 @@ public class MainActivity extends AppCompatActivity
 
         ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
 
+        detectFace();
+
         return matResult;
     }
+
+    private void detectFace() {
+        CascadeClassifier cascade = new CascadeClassifier();
+        if(cascade.empty()) {
+            String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            cascade.load(path +"haarcascade_frontalface_default.xml");
+        }
+
+        if(cascade.empty()){
+            return;
+        }
+
+        Mat gray = new Mat();
+        Mat resizingGray = new Mat();
+        //
+        Imgproc.cvtColor(matInput, gray, Imgproc.COLOR_BGRA2GRAY);
+        Imgproc.resize(gray, resizingGray, new Size(640, 360));
+
+        MatOfRect faces = new MatOfRect();
+        cascade.detectMultiScale(resizingGray, faces, 1.3, 3, 0, new Size(40, 40));
+        for(int i = 0; i < faces.total(); i++)
+        {
+            Rect rc = faces.toList().get(i);
+            rc.x *= 3;
+            rc.y *= 3;
+            rc.width *= 3;
+            rc.height *= 3;
+            rectangle(matInput, rc, new Scalar(255, 50, 100), 2);
+        }
+    }
+
 
 
     protected List<? extends CameraBridgeViewBase> getCameraViewList() {
