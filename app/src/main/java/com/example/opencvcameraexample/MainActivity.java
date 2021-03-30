@@ -208,8 +208,6 @@ public class MainActivity extends AppCompatActivity
 
                         mOpenCvCameraView.setCameraIndex(cameraIndex);
                         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-                        Core.flip(matInput, matInput, 1); // 가로
-                        Core.flip(matInput, matInput, 0); // 세로
 
                         Log.d("cameraIndex", Integer.toString(cameraIndex));
                     }
@@ -220,8 +218,6 @@ public class MainActivity extends AppCompatActivity
 
                         mOpenCvCameraView.setCameraIndex(cameraIndex);
                         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-                        Core.flip(matInput, matInput, 1);
-                        Core.flip(matInput, matInput, 0);
 
                         Log.d("cameraIndex", Integer.toString(cameraIndex));
                     }
@@ -282,6 +278,7 @@ public class MainActivity extends AppCompatActivity
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
         try {
+
             getWriteLock();
 
             matInput = inputFrame.rgba();
@@ -291,6 +288,8 @@ public class MainActivity extends AppCompatActivity
                 matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
 
             //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+            if(cameraIndex == 1)
+                Core.flip(matInput, matInput, 1); // 가로
 
 
             detect(cascadeClassifier_face, cascadeClassifier_eye, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
