@@ -90,7 +90,6 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
 
     return ret;
 
-
 }
 
 extern "C"
@@ -107,11 +106,9 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     img_result = img_input.clone();
 
-
     std::vector<Rect> faces;
 
     Mat img_gray;
-
 
     cvtColor(img_input, img_gray, COLOR_BGR2GRAY);
 
@@ -125,7 +122,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     //-- Detect faces
 
-    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(30, 30) );
+    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 3, 0|CASCADE_SCALE_IMAGE, Size(30, 30) );
 
 
 
@@ -147,13 +144,16 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         Point center( real_facesize_x + real_facesize_width / 2, real_facesize_y + real_facesize_height/2);
 
+        /*
         ellipse(img_result, center, Size( real_facesize_width / 2, real_facesize_height / 2), 0, 0, 360,
 
                 Scalar(255, 0, 255), 30, 8, 0);
-
+        */
 
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
+
+        rectangle(img_result, face_area, Scalar(255, 0, 0), 2, LINE_8, 0);
 
         Mat faceROI = img_gray( face_area );
 
@@ -162,7 +162,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         //-- In each face, detect eyes
 
-        ((CascadeClassifier *) cascade_classifier_eye)->detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CASCADE_SCALE_IMAGE, Size(30, 30) );
+        ((CascadeClassifier *) cascade_classifier_eye)->detectMultiScale( faceROI, eyes, 1.1, 3, 0 |CASCADE_SCALE_IMAGE, Size(20, 20) );
 
 
         for ( size_t j = 0; j < eyes.size(); j++ )
@@ -173,7 +173,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
             int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
 
-            circle( img_result, eye_center, radius, Scalar( 255, 0, 0 ), 30, 8, 0 );
+            circle( img_result, eye_center, radius, Scalar( 255, 0, 0 ), 2, 8, 0 );
 
         }
 

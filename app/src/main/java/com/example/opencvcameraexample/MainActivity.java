@@ -17,6 +17,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -31,16 +32,21 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.os.Environment.DIRECTORY_PICTURES;
 
 
 public class MainActivity extends AppCompatActivity
         implements CameraBridgeViewBase.CvCameraViewListener2 {
+
+    private int cameraIndex = 0;
 
     private static final String TAG = "opencv";
     private Mat matInput;
@@ -54,7 +60,6 @@ public class MainActivity extends AppCompatActivity
                               long cascadeClassifier_eye, long matAddrInput, long matAddrResult);
     public long cascadeClassifier_face = 0;
     public long cascadeClassifier_eye = 0;
-
 
     private final Semaphore writeLock = new Semaphore(1);
 
@@ -85,29 +90,16 @@ public class MainActivity extends AppCompatActivity
         OutputStream outputStream = null;
 
         try {
-            Log.d( "CCCC", "copyFile :: 다음 경로로 파일복사 "+ pathDir);
-
-            Log.d("CCCC", "0");
-
             inputStream = assetManager.open(filename);
-
-            Log.d("CCCC", "0.5");
-
             outputStream = new FileOutputStream(pathDir);
 
-            Log.d("CCCC", "1");
-
             byte[] buffer = new byte[1024];
-
-            Log.d("CCCC", "2");
             int read;
 
-            Log.d("CCCC", "3");
             while ((read = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, read);
             }
 
-            Log.d("CCCC", "4");
             inputStream.close();
             inputStream = null;
             outputStream.flush();
@@ -165,24 +157,33 @@ public class MainActivity extends AppCompatActivity
         mOpenCvCameraView = (CameraBridgeViewBase)findViewById(R.id.activity_surface_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.setCameraIndex(1); // front-camera(1),  back-camera(0)
+        mOpenCvCameraView.setCameraIndex(cameraIndex); // front-camera(1),  back-camera(0)
 
-        Button button = (Button)findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
+        Button captureButton = (Button)findViewById(R.id.capture_button);
+
+        captureButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-
                 try {
                     getWriteLock();
 
-                    File path = new File(Environment.getExternalStorageDirectory() + "/Images/");
+                    File path = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + "/PublicCamera/");
                     path.mkdirs();
-                    File file = new File(path, "image.jpg");
+
+                    long now = System.currentTimeMillis();
+                    Date mDate= new Date(now);
+                    SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
+                    String getTime = simpleDate.format(mDate);
+                    getTime += ".jpg";
+                    File file = new File(path, getTime);
 
                     String filename = file.toString();
 
                     Imgproc.cvtColor(matResult, matResult, Imgproc.COLOR_BGR2RGBA);
                     boolean ret  = Imgcodecs.imwrite( filename, matResult);
-                    if ( ret ) Log.d(TAG, "SUCESS");
+                    if ( ret ) {
+                        Log.d(TAG, "SUCESS");
+                        Toast.makeText(getApplicationContext(), "캡쳐 완료", Toast.LENGTH_SHORT).show();
+                    }
                     else Log.d(TAG, "FAIL");
 
 
@@ -192,14 +193,47 @@ public class MainActivity extends AppCompatActivity
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-
                 releaseWriteLock();
-
             }
         });
 
+        Button changeButton = (Button)findViewById(R.id.change_button);
+        changeButton.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                try{
+                    if(cameraIndex == 0)
+                    {
+                        mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
+                        cameraIndex = 1;
 
+                        mOpenCvCameraView.setCameraIndex(cameraIndex);
+                        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+                        Core.flip(matInput, matInput, 1);
+
+                        Log.d("cameraIndex", Integer.toString(cameraIndex));
+                    }
+                    else if (cameraIndex == 1)
+                    {
+                        mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
+                        cameraIndex = 0;
+
+                        mOpenCvCameraView.setCameraIndex(cameraIndex);
+                        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+                        Core.flip(matInput, matInput, 1);
+
+                        Log.d("cameraIndex", Integer.toString(cameraIndex));
+                    }
+                    else
+                    {
+                        Log.d("cameraIndex", "Invalid camera index");
+                    }
+                }catch (Exception e)
+                {
+                    Log.d("cameraIndex", e.getMessage());
+                }
+
+            }
+        });
     }
 
     @Override
@@ -255,7 +289,7 @@ public class MainActivity extends AppCompatActivity
                 matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
 
             //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-            Core.flip(matInput, matInput, 1);
+
 
             detect(cascadeClassifier_face, cascadeClassifier_eye, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
         } catch (InterruptedException e){
