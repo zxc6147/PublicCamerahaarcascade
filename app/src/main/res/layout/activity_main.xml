@@ -4,27 +4,65 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
-
-    <Button
-        android:id="@+id/capture_button"
-        android:layout_width="78dp"
-        android:layout_height="96dp"
-        android:layout_gravity="center_vertical"
-        android:text="캡쳐" />
-
-    <Button
-        android:id="@+id/change_button"
-        android:layout_width="78dp"
-        android:layout_height="96dp"
-        android:layout_gravity="center"
-        android:text="전환" />
+    tools:context=".MainActivity"
+    android:orientation="horizontal">
 
     <org.opencv.android.JavaCameraView
         android:id="@+id/activity_surface_view"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:visibility="gone"
-        opencv:camera_id="any" />
+        android:layout_gravity="top"
+        android:layout_weight="100"
+     />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:orientation="horizontal"
+        android:layout_weight="1">
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#000000"
+        android:layout_weight="6"
+        >
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/change_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:text="전환"
+            android:textColor="#ffffff" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="8"/>
+
+
+        <Button
+            android:id="@+id/capture_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="10"
+            android:text="캡쳐"
+            android:textSize="14sp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="16"/>
+
+    </LinearLayout>
 
 </LinearLayout>
