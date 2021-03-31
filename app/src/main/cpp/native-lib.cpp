@@ -55,16 +55,6 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
 
     baseDir.append(nativeFileNameString);
 
-    // log
-    std::vector<char> writable(baseDir.begin(), baseDir.end());
-    writable.push_back('\0');
-    char* s = &writable[0];
-
-    __android_log_print(ANDROID_LOG_DEBUG, "AAAA", "%s", s);
-
-    const char *pathDir = baseDir.c_str();
-    // end_log
-
     jlong ret = 0;
 
     ret = (jlong) new CascadeClassifier(baseDir);
@@ -104,12 +94,104 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     Mat &img_result = *(Mat *) mat_addr_result;
 
 
+    __android_log_print(ANDROID_LOG_DEBUG, (char *) "findface :: ",
+                        (char *) "Start ");
+
     img_result = img_input.clone();
 
     std::vector<Rect> faces;
 
     Mat img_gray;
 
+    Mat img_resized;
+
+
+    resize(img_input, img_resized, Size(img_result.cols / 2, img_result.rows / 2), 0, 0,INTER_LINEAR);
+
+    try {
+        cvtColor(img_resized, img_gray, COLOR_BGR2GRAY);
+        equalizeHist(img_gray, img_gray);
+        vector<Rect> faces;
+        ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_gray, faces, 1.1, 3, CASCADE_FIND_BIGGEST_OBJECT|CASCADE_SCALE_IMAGE, Size(30, 30) );
+
+        for(int i = 0; i < faces.size(); i++) {
+            Mat frame = img_resized;
+            Rect face = faces[i];
+
+            int cnts = 0;
+            int mb = 9;
+            int wPoint = 0;
+            int hPoint = 0;
+            int xStartPoint = 0;
+            int yStartPoint = 0;
+            double R = 0;
+            double G = 0;
+            double B = 0;
+
+            for (int i = 0; i < face.height / mb; i++) {
+                for (int j = 0; j < face.width / mb; j++) {
+                    cnts = 0;
+                    B = 0;
+                    G = 0;
+                    R = 0;
+                    xStartPoint = face.x + (j * mb);
+                    yStartPoint = face.y + (i * mb);
+
+                    // 이미지의 픽셀 값의 r, g, b 값의 각각 합을 구함
+                    for (int mbY = yStartPoint; mbY < yStartPoint + mb; mbY++) {
+                        for (int mbX = xStartPoint; mbX < xStartPoint + mb; mbX++) {
+                            wPoint = mbX;
+                            hPoint = mbY;
+
+                            if (mbX >= frame.cols) {
+                                wPoint = frame.cols - 1;
+                            }
+                            if (mbY >= frame.rows){
+                                hPoint = frame.rows - 1;
+                            }
+
+                            cv::Vec3b color = frame.at<cv::Vec3b>(hPoint, wPoint);
+                            B += color.val[0];
+                            G += color.val[1];
+                            R += color.val[2];
+                            cnts++;
+                        }
+                    }
+
+                    // r, g, b 값의 평균 산출
+                    B /= cnts;
+                    G /= cnts;
+                    R /= cnts;
+
+                    // 모자이크 색상 생성
+                    cv::Scalar color;
+                    color.val[0] = B;
+                    color.val[1] = G;
+                    color.val[2] = R;
+
+                    // 프레임에 모자이크 이미지 삽입
+                    rectangle(
+                            frame,
+                            Point(xStartPoint, yStartPoint),
+                            Point(xStartPoint + mb, yStartPoint + mb),
+                            color,
+                            -1,
+                            8,
+                            0
+                    );
+                }
+            }
+        }
+    }
+    catch (Exception& e) {
+        __android_log_print(ANDROID_LOG_DEBUG, "detectAndDraw",
+
+                            "인식 혹은 모자이크 실패");
+    }
+
+
+
+    /*
     cvtColor(img_input, img_gray, COLOR_BGR2GRAY);
 
     equalizeHist(img_gray, img_gray);
@@ -120,8 +202,11 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     float resizeRatio = resize(img_gray, img_resize, 640);
 
 
-    //-- Detect faces
 
+
+
+
+    //-- Detect faces
     ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 3, 0|CASCADE_SCALE_IMAGE, Size(30, 30) );
 
 
@@ -148,12 +233,13 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         ellipse(img_result, center, Size( real_facesize_width / 2, real_facesize_height / 2), 0, 0, 360,
 
                 Scalar(255, 0, 255), 30, 8, 0);
-        */
+
 
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
         rectangle(img_result, face_area, Scalar(255, 0, 0), 2, LINE_8, 0);
+
 
         Mat faceROI = img_gray( face_area );
 
@@ -176,8 +262,8 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             circle( img_result, eye_center, radius, Scalar( 255, 0, 0 ), 2, 8, 0 );
 
         }
-
-    }
+*/
+    //}
 
 
 
