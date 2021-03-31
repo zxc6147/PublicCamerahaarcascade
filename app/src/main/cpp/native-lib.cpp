@@ -116,14 +116,12 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     Mat img_resize;
 
-    float resizeRatio = resize(img_gray, img_resize, 640);
+    float resizeRatio = resize(img_gray, img_resize, 495);
 
 
     //-- Detect faces
 
     ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 3, 0, Size(20, 20) );
-
-
 
     __android_log_print(ANDROID_LOG_DEBUG, (char *) "native-lib :: ",
 
@@ -142,35 +140,58 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
+        // shallow copy
         Mat img_mosaic = img_result(face_area);
+
+        // temp를 mosaic shallow copy하면역시 동작 x
+        // 다른 객체여야 동작한다
         Mat img_temp;
 
-
-        // rect가 충분히 큰 경우로 할까?
+        Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
 
 
         /*
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -2:: ",
+
+                            (char *) "%p pointer", img_mosaic.ptr());
+
         resize(img_mosaic, img_temp, Size(20, 20));
-        resize(img_temp, img_mosaic, Size(img_mosaic.rows, img_mosaic.cols));
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -1:: ",
+
+                            (char *) "%p pointer", img_mosaic.ptr());
+
+        resize(img_temp, img_mosaic, originSize);
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix 0 :: ",
+
+                            (char *) "%p pointer", img_mosaic.ptr());
+
 */
 
-        Size tempSize = Size(img_mosaic.rows, img_mosaic.cols);
-
-        resize(img_mosaic, img_mosaic, Size(1, 1));
-
-        __android_log_print(ANDROID_LOG_DEBUG, (char *) "ASDF",
-
-                            (char *) "rows : %d found ", img_mosaic.rows);
-
-        resize(img_mosaic, img_mosaic, tempSize, 0, 0, INTER_LINEAR);
+        // ok
 
 
-        __android_log_print(ANDROID_LOG_DEBUG, (char *) "ASDF",
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -2:: ",
 
-                            (char *) "rows : %d found ", img_mosaic.rows);
+                            (char *) "%p pointer", img_mosaic.ptr());
+        // why not working?
+
+        resize(img_mosaic, img_mosaic, Size(20, 20),0 ,0 ,INTER_LINEAR);
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -1:: ",
+
+                            (char *) "%p pointer", img_mosaic.ptr());
+
+
+        resize(img_mosaic, img_mosaic, originSize,0 ,0 ,INTER_LINEAR);
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix 0 :: ",
+
+                            (char *) "%p pointer", img_mosaic.ptr());
 
         // blur
-        //(img_result, face_area, Scalar(100 * (i - 2), 255, 255 * i), 3, 4, 0);
         rectangle(img_result, face_area, Scalar(0, 0, 255), 2, LINE_8, 0);
     }
 }
