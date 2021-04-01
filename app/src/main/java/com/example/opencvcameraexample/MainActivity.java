@@ -41,6 +41,7 @@ import java.util.concurrent.Semaphore;
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Environment.DIRECTORY_PICTURES;
+import static java.lang.Thread.sleep;
 
 
 public class MainActivity extends AppCompatActivity
@@ -57,9 +58,9 @@ public class MainActivity extends AppCompatActivity
     //public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
     public native long loadCascade(String cascadeFileName);
     public native void detect(long cascadeClassifier_face,
-                              long cascadeClassifier_eye, long matAddrInput, long matAddrResult);
+                              long cascadeClassifier_side_face, long matAddrInput, long matAddrResult);
     public long cascadeClassifier_face = 0;
-    public long cascadeClassifier_eye = 0;
+    public long cascadeClassifier_side_face = 0;
 
     private final Semaphore writeLock = new Semaphore(1);
 
@@ -112,15 +113,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void read_cascade_file(){
-        copyFile("haarcascade_frontalface_alt.xml");
-        copyFile("haarcascade_eye_tree_eyeglasses.xml");
+        copyFile("haarcascade_frontalface_default.xml");
+        copyFile("haarcascade_profileface.xml");
 
         Log.d(TAG, "read_cascade_file:");
 
-        cascadeClassifier_face = loadCascade( "haarcascade_frontalface_alt.xml");
+        cascadeClassifier_face = loadCascade( "haarcascade_frontalface_default.xml");
         Log.d(TAG, "read_cascade_file:");
 
-        cascadeClassifier_eye = loadCascade( "haarcascade_eye_tree_eyeglasses.xml");
+        cascadeClassifier_side_face = loadCascade( "haarcascade_profileface.xml");
     }
 
 
@@ -164,6 +165,8 @@ public class MainActivity extends AppCompatActivity
         captureButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 try {
+                    mOpenCvCameraView.disableView();
+
                     getWriteLock();
 
                     File path = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + "/PublicCamera/");
@@ -171,7 +174,7 @@ public class MainActivity extends AppCompatActivity
 
                     long now = System.currentTimeMillis();
                     Date mDate= new Date(now);
-                    SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
+                    SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss_SSS");
                     String getTime = simpleDate.format(mDate);
                     getTime += ".jpg";
                     File file = new File(path, getTime);
@@ -179,12 +182,16 @@ public class MainActivity extends AppCompatActivity
                     String filename = file.toString();
 
                     Imgproc.cvtColor(matResult, matResult, Imgproc.COLOR_BGR2RGBA);
+
                     boolean ret  = Imgcodecs.imwrite( filename, matResult);
                     if ( ret ) {
                         Log.d(TAG, "SUCESS");
                         Toast.makeText(getApplicationContext(), "캡쳐 완료", Toast.LENGTH_SHORT).show();
                     }
-                    else Log.d(TAG, "FAIL");
+                    else {
+                        Log.d(TAG, "FAIL");
+                        Toast.makeText(getApplicationContext(), "캡쳐 실패", Toast.LENGTH_SHORT).show();
+                    }
 
 
                     Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -194,6 +201,15 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
                 releaseWriteLock();
+
+                try {
+                    sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+                mOpenCvCameraView.enableView();
             }
         });
 
@@ -239,7 +255,11 @@ public class MainActivity extends AppCompatActivity
     {
         super.onPause();
         if (mOpenCvCameraView != null)
+        {
+            mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
             mOpenCvCameraView.disableView();
+            mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+        }
     }
 
     @Override
@@ -292,7 +312,7 @@ public class MainActivity extends AppCompatActivity
                 Core.flip(matInput, matInput, 1); // 가로
 
 
-            detect(cascadeClassifier_face, cascadeClassifier_eye, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+            detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
         } catch (InterruptedException e){
             e.printStackTrace();
         }
