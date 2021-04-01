@@ -150,17 +150,34 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
 
 
-        /*
 
+        //resize 자체가 deep copy가 아니라 buffer에 저장 후 shallow copy 인듯
+
+        // /*
         __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -2:: ",
 
                             (char *) "%p pointer", img_mosaic.ptr());
 
         resize(img_mosaic, img_temp, Size(20, 20));
 
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -3:: ",
+
+                            (char *) "%p temp pointer", img_temp.ptr());
+
+        resize(img_mosaic, img_temp, Size(30, 30));
+
+
+        __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -2:: ",
+
+                            (char *) "%p temp pointer", img_temp.ptr());
+
+        resize(img_result, img_temp, Size(30, 30));
+
+
         __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -1:: ",
 
-                            (char *) "%p pointer", img_mosaic.ptr());
+                            (char *) "%p temp pointer", img_temp.ptr());
 
         resize(img_temp, img_mosaic, originSize);
 
@@ -168,10 +185,11 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
                             (char *) "%p pointer", img_mosaic.ptr());
 
-*/
+// */
 
         // ok
 
+         /*
 
         __android_log_print(ANDROID_LOG_DEBUG, (char *) "resized matrix -2:: ",
 
@@ -193,5 +211,9 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         // blur
         rectangle(img_result, face_area, Scalar(0, 0, 255), 2, LINE_8, 0);
+
+
+        // */
+
     }
 }
