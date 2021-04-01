@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.annotation.TargetApi;
@@ -41,6 +43,7 @@ import java.util.concurrent.Semaphore;
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Environment.DIRECTORY_PICTURES;
+import static java.lang.Thread.getAllStackTraces;
 import static java.lang.Thread.sleep;
 
 
@@ -256,15 +259,31 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
         if (mOpenCvCameraView != null)
         {
-            mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
-            mOpenCvCameraView.disableView();
-            mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
+            mOpenCvCameraView.setBackgroundColor(Color.BLACK);
+
         }
+    }
+
+    @Override
+    public void onBackPressed()
+    {
+        mOpenCvCameraView.setBackgroundColor(Color.BLACK);
+
+        try{
+            sleep(100);
+            super.onBackPressed();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
     public void onResume()
     {
+        mOpenCvCameraView.setBackgroundColor(Color.TRANSPARENT);
         super.onResume();
 
         if (!OpenCVLoader.initDebug()) {
@@ -310,7 +329,6 @@ public class MainActivity extends AppCompatActivity
             //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
             if(cameraIndex == 1)
                 Core.flip(matInput, matInput, 1); // 가로
-
 
             detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
         } catch (InterruptedException e){
