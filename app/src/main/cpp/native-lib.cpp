@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <opencv2/opencv.hpp>
 #include <android/log.h>
+#include <opencv2/core/ocl.hpp>
 
 
 using namespace cv;
@@ -91,6 +92,18 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
 
 }
 
+void MosaicImage(Mat& img_mosaic)
+{
+    Mat img_temp;
+
+    Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
+
+    resize(img_mosaic, img_temp, Size(20, 20));
+
+    resize(img_temp, img_mosaic, originSize);
+}
+
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject thiz,
@@ -98,10 +111,9 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                                                          jlong cascade_classifier_side_face,
                                                          jlong mat_addr_input,
                                                          jlong mat_addr_result) {
+
     Mat &img_input = *(Mat *) mat_addr_input;
-
     Mat &img_result = *(Mat *) mat_addr_result;
-
 
     img_result = img_input.clone();
 
@@ -145,15 +157,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         // shallow copy
         Mat img_mosaic = img_result(face_area);
 
-        // temp를 mosaic shallow copy하면역시 동작 x
-        // 다른 객체여야 동작한다
-        Mat img_temp;
-
-        Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
-
-        resize(img_mosaic, img_temp, Size(20, 20));
-
-        resize(img_temp, img_mosaic, originSize);
+        MosaicImage(img_mosaic);
     }
 
 
@@ -173,15 +177,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         // shallow copy
         Mat img_mosaic = img_result(face_area);
 
-        // temp를 mosaic shallow copy하면역시 동작 x
-        // 다른 객체여야 동작한다
-        Mat img_temp;
-
-        Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
-
-        resize(img_mosaic, img_temp, Size(20, 20));
-
-        resize(img_temp, img_mosaic, originSize);
-
+        MosaicImage(img_mosaic);
     }
 }
+
