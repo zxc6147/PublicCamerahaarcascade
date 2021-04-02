@@ -183,6 +183,5 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         resize(img_temp, img_mosaic, originSize);
 
-        // ok
     }
 }

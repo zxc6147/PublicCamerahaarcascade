@@ -27,8 +27,12 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.video.Video;
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.VideoWriter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,7 +60,15 @@ public class MainActivity extends AppCompatActivity
     private Mat matInput;
     private Mat matResult;
 
+    private boolean isVideo;
+    private boolean isVideoCapturing;
+
+    //
+    private String tempVideoPath;
+
     private CameraBridgeViewBase mOpenCvCameraView;
+
+    private VideoWriter videoWriter;
 
     //public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
     public native long loadCascade(String cascadeFileName);
@@ -163,92 +175,122 @@ public class MainActivity extends AppCompatActivity
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setCameraIndex(cameraIndex); // front-camera(1),  back-camera(0)
 
+        videoWriter = new VideoWriter("", VideoWriter.fourcc('M','J','P','G'), 25.0D, new Size(mOpenCvCameraView.getWidth(), mOpenCvCameraView.getHeight()));
+
+        isVideo = false;
+        isVideoCapturing = false;
+
         Button captureButton = (Button)findViewById(R.id.capture_button);
 
         captureButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    mOpenCvCameraView.disableView();
+                File path = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + "/PublicCamera/");
+                path.mkdirs();
 
-                    getWriteLock();
+                long now = System.currentTimeMillis();
+                Date mDate= new Date(now);
+                SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss_SSS");
+                String getTime = simpleDate.format(mDate);
+                // picture
+                if(isVideo == false) {
+                    try {
+                        mOpenCvCameraView.disableView();
 
-                    File path = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_PICTURES) + "/PublicCamera/");
-                    path.mkdirs();
+                        getWriteLock();
 
-                    long now = System.currentTimeMillis();
-                    Date mDate= new Date(now);
-                    SimpleDateFormat simpleDate = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss_SSS");
-                    String getTime = simpleDate.format(mDate);
-                    getTime += ".jpg";
+                        getTime += ".jpg";
+                        File file = new File(path, getTime);
+
+                        String filename = file.toString();
+
+                        Imgproc.cvtColor(matResult, matResult, Imgproc.COLOR_BGR2RGBA);
+
+                        boolean ret  = Imgcodecs.imwrite( filename, matResult);
+                        if ( ret ) {
+                            Log.d(TAG, "SUCESS");
+                            Toast.makeText(getApplicationContext(), "캡쳐 완료", Toast.LENGTH_SHORT).show();
+                        }
+                        else {
+                            Log.d(TAG, "FAIL");
+                            Toast.makeText(getApplicationContext(), "캡쳐 실패", Toast.LENGTH_SHORT).show();
+                        }
+
+
+                        Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                        mediaScanIntent.setData(Uri.fromFile(file));
+                        sendBroadcast(mediaScanIntent);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    releaseWriteLock();
+
+                    try {
+                        sleep(100);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    mOpenCvCameraView.enableView();
+                }
+                // video
+                else{
+                    Log.d("aaaaaaaa", "video");
+
+                    getTime += ".avi";
                     File file = new File(path, getTime);
 
                     String filename = file.toString();
 
-                    Imgproc.cvtColor(matResult, matResult, Imgproc.COLOR_BGR2RGBA);
-
-                    boolean ret  = Imgcodecs.imwrite( filename, matResult);
-                    if ( ret ) {
-                        Log.d(TAG, "SUCESS");
-                        Toast.makeText(getApplicationContext(), "캡쳐 완료", Toast.LENGTH_SHORT).show();
-                    }
-                    else {
-                        Log.d(TAG, "FAIL");
-                        Toast.makeText(getApplicationContext(), "캡쳐 실패", Toast.LENGTH_SHORT).show();
-                    }
-
-
-                    Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    mediaScanIntent.setData(Uri.fromFile(file));
-                    sendBroadcast(mediaScanIntent);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    tempVideoPath = filename;
+                    videoWriter.open(filename, VideoWriter.fourcc('M','J','P','G'), 25.0D, new Size(mOpenCvCameraView.getWidth(), mOpenCvCameraView.getHeight()));
                 }
-                releaseWriteLock();
 
-                try {
-                    sleep(100);
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();
-                }
-                mOpenCvCameraView.enableView();
             }
         });
 
-        Button changeButton = (Button)findViewById(R.id.change_button);
-        changeButton.setOnClickListener(new View.OnClickListener(){
+        Button changeCameraButton = (Button)findViewById(R.id.change_button);
+        changeCameraButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 try{
-                    if(cameraIndex == 0)
-                    {
+                    if(cameraIndex == 0) {
                         mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
                         cameraIndex = 1;
 
                         mOpenCvCameraView.setCameraIndex(cameraIndex);
                         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-
-                        Log.d("cameraIndex", Integer.toString(cameraIndex));
                     }
-                    else if (cameraIndex == 1)
-                    {
+                    else if (cameraIndex == 1) {
                         mOpenCvCameraView.setVisibility(SurfaceView.INVISIBLE);
                         cameraIndex = 0;
 
                         mOpenCvCameraView.setCameraIndex(cameraIndex);
                         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-
-                        Log.d("cameraIndex", Integer.toString(cameraIndex));
                     }
-                    else
-                    {
-                        Log.d("cameraIndex", "Invalid camera index");
+                    else {
                     }
                 }catch (Exception e)
                 {
                     Log.d("cameraIndex", e.getMessage());
                 }
 
+            }
+        });
+
+
+        Button changeCaptureButton = (Button)findViewById(R.id.change_capture_button);
+        changeCaptureButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                if(isVideo == true){
+                    isVideo = false;
+                    changeCaptureButton.setText("비디오");
+                    captureButton.setText("캡쳐");
+                } else{
+                    isVideo = true;
+                    changeCaptureButton.setText("사진");
+                    captureButton.setText("녹화");
+                }
             }
         });
     }
@@ -273,16 +315,14 @@ public class MainActivity extends AppCompatActivity
             sleep(100);
             super.onBackPressed();
         }
-        catch (InterruptedException e)
-        {
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
 
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         mOpenCvCameraView.setBackgroundColor(Color.TRANSPARENT);
         super.onResume();
 
@@ -290,7 +330,7 @@ public class MainActivity extends AppCompatActivity
             Log.d(TAG, "onResume :: Internal OpenCV library not found.");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback);
         } else {
-            Log.d(TAG, "onResum :: OpenCV library found inside package. Using it!");
+            Log.d(TAG, "onResume :: OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
     }
@@ -316,26 +356,49 @@ public class MainActivity extends AppCompatActivity
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
-        try {
+        if(isVideo == false)
+        {
+            try {
+                getWriteLock();
+                matInput = inputFrame.rgba();
+                if (matResult == null)
+                    matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
+                //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+                if(cameraIndex == 1)
+                    Core.flip(matInput, matInput, 1); // 가로
 
-            getWriteLock();
+                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+            } catch (InterruptedException e){
+                e.printStackTrace();
+            }
 
-            matInput = inputFrame.rgba();
+            releaseWriteLock();
+        } else {
+            try {
+                getWriteLock();
+                matInput = inputFrame.rgba();
+                if (matResult == null) {
+                    matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
+                }
+                else {
+                }
 
-            if (matResult == null)
+                //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+                if(cameraIndex == 1)
+                    Core.flip(matInput, matInput, 1); // 가로
 
-                matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
+                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
 
-            //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-            if(cameraIndex == 1)
-                Core.flip(matInput, matInput, 1); // 가로
-
-            detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-        } catch (InterruptedException e){
-            e.printStackTrace();
+                //Log.d("aaaaaaaaaaaa", "" + matResult.width() + "     " + inputFrame.rgba().width());
+                //videoWriter.write(matResult);
+            } catch (InterruptedException e)
+            {
+                Log.d("aaaaa", "          e            ");
+                e.printStackTrace();
+            }
+            releaseWriteLock();
         }
 
-        releaseWriteLock();
 
         return matResult;
     }

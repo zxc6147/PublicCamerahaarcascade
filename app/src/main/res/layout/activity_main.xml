@@ -53,7 +53,7 @@
         <Button
             android:id="@+id/capture_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_weight="10"
             android:text="캡쳐"
             android:textSize="14sp" />
@@ -61,7 +61,21 @@
         <Space
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="16"/>
+            android:layout_weight="8"/>
+
+
+        <Button
+            android:id="@+id/change_capture_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:text="비디오"
+            android:textSize="14sp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
 
     </LinearLayout>
 
