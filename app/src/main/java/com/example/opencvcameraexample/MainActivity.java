@@ -60,6 +60,9 @@ public class MainActivity extends AppCompatActivity
     private Mat matInput;
     private Mat matResult;
 
+    // 10명까지 저장
+    private double[] ROIarray = new double[50];
+
     private boolean isVideo;
     private boolean isVideoCapturing;
 
@@ -73,7 +76,7 @@ public class MainActivity extends AppCompatActivity
     //public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
     public native long loadCascade(String cascadeFileName);
     public native void detect(long cascadeClassifier_face,
-                              long cascadeClassifier_side_face, long matAddrInput, long matAddrResult);
+                              long cascadeClassifier_side_face, long matAddrInput, long matAddrResult, double[] array);
     public long cascadeClassifier_face = 0;
     public long cascadeClassifier_side_face = 0;
 
@@ -367,7 +370,7 @@ public class MainActivity extends AppCompatActivity
                 if(cameraIndex == 1)
                     Core.flip(matInput, matInput, 1); // 가로
 
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
             } catch (InterruptedException e){
                 e.printStackTrace();
             }
@@ -387,7 +390,7 @@ public class MainActivity extends AppCompatActivity
                 if(cameraIndex == 1)
                     Core.flip(matInput, matInput, 1); // 가로
 
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
 
                 //Log.d("aaaaaaaaaaaa", "" + matResult.width() + "     " + inputFrame.rgba().width());
                 //videoWriter.write(matResult);
