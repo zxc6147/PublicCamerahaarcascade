@@ -58,7 +58,7 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
     writable.push_back('\0');
     char* s = &writable[0];
 
-    __android_log_print(ANDROID_LOG_DEBUG, "AAAA", "%s", s);
+    __android_log_print(ANDROID_LOG_DEBUG, "save directory", "%s", s);
 
     const char *pathDir = baseDir.c_str();
     // end_log
@@ -72,16 +72,12 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
         __android_log_print(ANDROID_LOG_DEBUG, "native-lib :: ",
 
                             "CascadeClassifier로 로딩 실패  %s", nativeFileNameString);
-
     }
 
     else
 
         __android_log_print(ANDROID_LOG_DEBUG, "native-lib :: ",
-
                             "CascadeClassifier로 로딩 성공 %s", nativeFileNameString);
-
-
 
     env->ReleaseStringUTFChars(cascade_file_name, nativeFileNameString);
 
@@ -90,11 +86,13 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
 
 void MosaicImage(Mat& img_mosaic)
 {
+    //__android_log_print(ANDROID_LOG_DEBUG, "ASDF", "INIT");
+
     Mat img_temp;
 
     Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
 
-    resize(img_mosaic, img_temp, Size(20, 20));
+    resize(img_mosaic, img_temp, Size(9, 9));
 
     resize(img_temp, img_mosaic, originSize);
 }
@@ -161,15 +159,21 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     //frontalface
     for (int i = 0; i < faces.size(); i++) {
 
-        double real_facesize_x = faces[i].x / resizeRatio;
+        double w_temp = faces[i].width / resizeRatio;
 
-        double real_facesize_y = faces[i].y / resizeRatio;
+        double real_facesize_x = faces[i].x / resizeRatio + 0.25 * w_temp;
 
-        double real_facesize_width = faces[i].width / resizeRatio;
+        double h_temp = faces[i].height / resizeRatio;
 
-        double real_facesize_height = faces[i].height / resizeRatio;
+        double real_facesize_y = faces[i].y / resizeRatio + h_temp * 0.25;
 
-        Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
+        double real_facesize_width = w_temp * 0.5;
+
+        double real_facesize_height = h_temp * 0.5;
+
+        Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width, real_facesize_height);
+
+        //rectangle(img_result, face_area, Scalar(0,0,255), 5, LINE_8, 0);
 
         // shallow copy
         Mat img_mosaic = img_result(face_area);
@@ -189,11 +193,10 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             // 근처에 있는지 판별 해야함
             else{
                // x + 1/4width < this.x < x + 3/4width && y + 1/4height < this.y < y + 3 / 4 height 이면 같은 rect이다
-               if(ptrROIarray[5 * preFrameFaceIndex] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] < real_facesize_x &&
-                    real_facesize_x < ptrROIarray[5 * preFrameFaceIndex] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] &&
-                    ptrROIarray[5 * preFrameFaceIndex + 1] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3] < real_facesize_y &&
-                    real_facesize_y < ptrROIarray[5 * preFrameFaceIndex + 1] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3]
-                       ){
+               if(ptrROIarray[5 * preFrameFaceIndex] < real_facesize_x + real_facesize_width
+                  && ptrROIarray[5 * preFrameFaceIndex] + ptrROIarray[5 * preFrameFaceIndex + 2] > real_facesize_x
+                  && ptrROIarray[5 * preFrameFaceIndex + 1] < real_facesize_y + real_facesize_height
+                  && ptrROIarray[5 * preFrameFaceIndex + 1] + ptrROIarray[5 * preFrameFaceIndex + 3] > real_facesize_y){
                    ptrROIarray[5 * preFrameFaceIndex] = real_facesize_x;
                    ptrROIarray[5 * preFrameFaceIndex + 1] = real_facesize_y;
                    ptrROIarray[5 * preFrameFaceIndex + 2] = real_facesize_width;
@@ -216,7 +219,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             ptrROIarray[5 * insertLocation + 2] = real_facesize_width;
             ptrROIarray[5 * insertLocation + 3] = real_facesize_height;
 
-            //frame = 0;
+            // frame = 0;
             ptrROIarray[5 * insertLocation + 4] = 0;
 
             findFlag = false;
@@ -228,13 +231,17 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     //side face
     for (int i = 0; i < side_faces.size(); i++) {
 
-        double real_facesize_x = side_faces[i].x / resizeRatio;
+        double w_temp = side_faces[i].width / resizeRatio;
 
-        double real_facesize_y = side_faces[i].y / resizeRatio;
+        double real_facesize_x = side_faces[i].x / resizeRatio + 0.25 * w_temp;
 
-        double real_facesize_width = side_faces[i].width / resizeRatio;
+        double h_temp = side_faces[i].height / resizeRatio;
 
-        double real_facesize_height = side_faces[i].height / resizeRatio;
+        double real_facesize_y = side_faces[i].y / resizeRatio + 0.25 * h_temp;
+
+        double real_facesize_width = w_temp * 0.5;
+
+        double real_facesize_height = h_temp * 0.5;
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
@@ -254,13 +261,14 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                 }
             }
                 // 근처에 있는지 판별 해야함
+                // if (RectA.Left < RectB.Right && RectA.Right > RectB.Left && RectA.Top > RectB.Bottom && RectA.Bottom < RectB.Top )
             else{
-                // x + 1/4width < this.x < x + 3/4width && y + 1/4height < this.y < y + 3 / 4 height 이면 같은 rect이다
-                if(ptrROIarray[5 * preFrameFaceIndex] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] < real_facesize_x + (double)1 / 2 * real_facesize_width
-                    && real_facesize_x + (double)1 / 2 * real_facesize_width < ptrROIarray[5 * preFrameFaceIndex] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2]
-                   && ptrROIarray[5 * preFrameFaceIndex + 1] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3] < real_facesize_y + (double)1 / 2 * real_facesize_height
-                   && real_facesize_y + (double)1 / 2 * real_facesize_height < ptrROIarray[5 * preFrameFaceIndex + 1] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3]
-                        ){
+                // 겹치면 같은 rect
+                if(ptrROIarray[5 * preFrameFaceIndex] < real_facesize_x + real_facesize_width
+                        && ptrROIarray[5 * preFrameFaceIndex] + ptrROIarray[5 * preFrameFaceIndex + 2] > real_facesize_x
+                        && ptrROIarray[5 * preFrameFaceIndex + 1] < real_facesize_y + real_facesize_height
+                        && ptrROIarray[5 * preFrameFaceIndex + 1] + ptrROIarray[5 * preFrameFaceIndex + 3] > real_facesize_y){
+
                     ptrROIarray[5 * preFrameFaceIndex] = real_facesize_x;
                     ptrROIarray[5 * preFrameFaceIndex + 1] = real_facesize_y;
                     ptrROIarray[5 * preFrameFaceIndex + 2] = real_facesize_width;
@@ -298,7 +306,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         if( ptrROIarray[2 + 5 * i] != 0 && ptrROIarray[4 + 5 * i] != 0)
         {
             // 프레임이 어느정도 넘으면 (어느 프레임 이상 기존의 rect 불러왔으면)
-            if(ptrROIarray[4 + 5 * i] > 5)
+            if(ptrROIarray[4 + 5 * i] > 15)
             {
                 // 초기화
                 ptrROIarray[5 * i] = 0;
@@ -311,12 +319,13 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             }
             Rect face_area( ptrROIarray[5 * i],ptrROIarray[5 * i + 1],ptrROIarray[5 * i + 2],ptrROIarray[5 * i + 3] );
 
+            rectangle(img_result, face_area, Scalar(255, 0, 0), 1, LINE_8, 0);
+
             Mat img_mosaic = img_result(face_area);
 
             MosaicImage(img_mosaic);
         }
     }
-
 
     env -> ReleaseDoubleArrayElements(ROIarray, ptrROIarray, 0);
 }
