@@ -76,9 +76,9 @@ public class MainActivity extends AppCompatActivity
     //public native void ConvertRGBtoGray(long matAddrInput, long matAddrResult);
     public native long loadCascade(String cascadeFileName);
     public native void detect(long cascadeClassifier_face,
-                              long cascadeClassifier_side_face, long matAddrInput, long matAddrResult, double[] array);
+                              long cascadeClassifier_eye, long matAddrInput, long matAddrResult, double[] array);
     public long cascadeClassifier_face = 0;
-    public long cascadeClassifier_side_face = 0;
+    public long cascadeClassifier_eye = 0;
 
     private final Semaphore writeLock = new Semaphore(1);
 
@@ -132,14 +132,11 @@ public class MainActivity extends AppCompatActivity
 
     private void read_cascade_file(){
         copyFile("haarcascade_frontalface_default.xml");
-        copyFile("haarcascade_profileface.xml");
-
-        Log.d(TAG, "read_cascade_file:");
+        copyFile("haarcascade_eye_tree_eyeglasses.xml");
 
         cascadeClassifier_face = loadCascade( "haarcascade_frontalface_default.xml");
-        Log.d(TAG, "read_cascade_file:");
 
-        cascadeClassifier_side_face = loadCascade( "haarcascade_profileface.xml");
+        cascadeClassifier_eye = loadCascade( "haarcascade_eye_tree_eyeglasses.xml");
     }
 
 
@@ -370,7 +367,7 @@ public class MainActivity extends AppCompatActivity
                 if(cameraIndex == 1)
                     Core.flip(matInput, matInput, 1); // 가로
 
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
+                detect(cascadeClassifier_face, cascadeClassifier_eye, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
             } catch (InterruptedException e){
                 e.printStackTrace();
             }
@@ -390,7 +387,7 @@ public class MainActivity extends AppCompatActivity
                 if(cameraIndex == 1)
                     Core.flip(matInput, matInput, 1); // 가로
 
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
+                detect(cascadeClassifier_face, cascadeClassifier_eye, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
 
                 //Log.d("aaaaaaaaaaaa", "" + matResult.width() + "     " + inputFrame.rgba().width());
                 //videoWriter.write(matResult);
