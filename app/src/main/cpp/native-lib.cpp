@@ -140,8 +140,8 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     //-- Detect faces
 
-    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 5, 0, Size(20, 20) );
-    ((CascadeClassifier *) cascade_classifier_side_face)->detectMultiScale( img_resize, side_faces, 1.1, 5, 0, Size(20, 20) );
+    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 4, 0, Size(15, 15) );
+    ((CascadeClassifier *) cascade_classifier_side_face)->detectMultiScale( img_resize, side_faces, 1.1, 4, 0, Size(15, 15) );
 
     __android_log_print(ANDROID_LOG_DEBUG, (char *) "native-lib :: ",
 
@@ -161,15 +161,15 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         double w_temp = faces[i].width / resizeRatio;
 
-        double real_facesize_x = faces[i].x / resizeRatio + 0.25 * w_temp;
+        double real_facesize_x = faces[i].x / resizeRatio + 0.2 * w_temp;
 
         double h_temp = faces[i].height / resizeRatio;
 
-        double real_facesize_y = faces[i].y / resizeRatio + h_temp * 0.25;
+        double real_facesize_y = faces[i].y / resizeRatio + h_temp * 0.2;
 
-        double real_facesize_width = w_temp * 0.5;
+        double real_facesize_width = w_temp * 0.6;
 
-        double real_facesize_height = h_temp * 0.5;
+        double real_facesize_height = h_temp * 0.6;
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width, real_facesize_height);
 
@@ -233,15 +233,15 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         double w_temp = side_faces[i].width / resizeRatio;
 
-        double real_facesize_x = side_faces[i].x / resizeRatio + 0.25 * w_temp;
+        double real_facesize_x = side_faces[i].x / resizeRatio + 0.2 * w_temp;
 
         double h_temp = side_faces[i].height / resizeRatio;
 
-        double real_facesize_y = side_faces[i].y / resizeRatio + 0.25 * h_temp;
+        double real_facesize_y = side_faces[i].y / resizeRatio + 0.2 * h_temp;
 
-        double real_facesize_width = w_temp * 0.5;
+        double real_facesize_width = w_temp * 0.6;
 
-        double real_facesize_height = h_temp * 0.5;
+        double real_facesize_height = h_temp * 0.6;
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
@@ -318,8 +318,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                 continue;
             }
             Rect face_area( ptrROIarray[5 * i],ptrROIarray[5 * i + 1],ptrROIarray[5 * i + 2],ptrROIarray[5 * i + 3] );
-
-            rectangle(img_result, face_area, Scalar(255, 0, 0), 1, LINE_8, 0);
 
             Mat img_mosaic = img_result(face_area);
 
