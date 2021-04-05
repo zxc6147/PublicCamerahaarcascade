@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity
     private Mat matResult;
 
     // 10명까지 저장
-    private double[] ROIarray = new double[50];
+    private double[] ROIarray = new double[150];
 
     private boolean isVideo;
     private boolean isVideoCapturing;

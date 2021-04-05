@@ -110,14 +110,16 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     // not copy
     jdouble *ptrROIarray = env -> GetDoubleArrayElements(ROIarray, JNI_FALSE);
 
+    int size = env->GetArrayLength(ROIarray);
+
+    int realArrayIndex = size / 5;
+
 
     // frame 1씩 더해줌
     for(int i = 0; i < 10; i++)
     {
         ptrROIarray[ 5 * i + 4] += 1;
     }
-
-
 
     Mat &img_input = *(Mat *) mat_addr_input;
     Mat &img_result = *(Mat *) mat_addr_result;
@@ -143,12 +145,19 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 5, 0, Size(20, 20) );
     ((CascadeClassifier *) cascade_classifier_side_face)->detectMultiScale( img_resize, side_faces, 1.1, 5, 0, Size(20, 20) );
 
-
     __android_log_print(ANDROID_LOG_DEBUG, (char *) "native-lib :: ",
 
                         (char *) "face %d found ", faces.size());
 
-    int totalFace = 0;
+    // 배열 안에 근처의 사각형 있다 없다 나타내는 flag
+    bool rectFlag = false;
+
+    // 삽입 위치 찾았다?
+    bool findFlag = false;
+
+    // 삽입 위치 지정
+    int insertLocation = -1;
+
     //frontalface
     for (int i = 0; i < faces.size(); i++) {
 
@@ -167,49 +176,51 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         MosaicImage(img_mosaic);
 
-
-
-        // 배열 안에 근처의 사각형 있다 없다 나타내는 flag
-        bool recflag = false;
-
-        // 삽입 위치 찾았다?
-        bool findFlag = false;
-
-        // 삽입 위치 지정
-        int insetLocation = -1;
-
-        for(int preFrameFaceIndex = 0; preFrameFaceIndex < 10; preFrameFaceIndex++)
-        {
-            // width
+        for(int preFrameFaceIndex = 0; preFrameFaceIndex < realArrayIndex; preFrameFaceIndex++){
+            // width == 0?
             if(ptrROIarray[5 * preFrameFaceIndex + 2] == 0)
             {
                 if(findFlag == false)
                 {
-                    insetLocation = preFrameFaceIndex;
+                    insertLocation = preFrameFaceIndex;
                     findFlag = true;
                 }
             }
             // 근처에 있는지 판별 해야함
             else{
-                // pseudo
-               // x + 1/4width < this.x < x + 3/4width && y + 1/4height <  < y + 3 / 4 height 이면 같은 rect이다!!
-               // 이 자리에 대입!
+               // x + 1/4width < this.x < x + 3/4width && y + 1/4height < this.y < y + 3 / 4 height 이면 같은 rect이다
+               if(ptrROIarray[5 * preFrameFaceIndex] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] < real_facesize_x &&
+                    real_facesize_x < ptrROIarray[5 * preFrameFaceIndex] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] &&
+                    ptrROIarray[5 * preFrameFaceIndex + 1] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3] < real_facesize_y &&
+                    real_facesize_y < ptrROIarray[5 * preFrameFaceIndex + 1] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3]
+                       ){
+                   ptrROIarray[5 * preFrameFaceIndex] = real_facesize_x;
+                   ptrROIarray[5 * preFrameFaceIndex + 1] = real_facesize_y;
+                   ptrROIarray[5 * preFrameFaceIndex + 2] = real_facesize_width;
+                   ptrROIarray[5 * preFrameFaceIndex + 3] = real_facesize_height;
+                   ptrROIarray[5 * preFrameFaceIndex + 4] = 0;
 
+                   rectFlag = true;
+
+                   break;
+               }
             }
         }
 
-
-        if(findFlag == true && insetLocation > -1)
+        // empty element를 찾고, 같은 rect를 찾지 못하였을때
+        if(findFlag == true && insertLocation > -1 && rectFlag == false)
         {
             // insetLocation자리에넣는다.
-            ptrROIarray[5 * insetLocation] = real_facesize_x;
-            ptrROIarray[5 * insetLocation + 1] = real_facesize_y;
-            ptrROIarray[5 * insetLocation + 2] = real_facesize_width;
-            ptrROIarray[5 * insetLocation + 3] = real_facesize_height;
+            ptrROIarray[5 * insertLocation] = real_facesize_x;
+            ptrROIarray[5 * insertLocation + 1] = real_facesize_y;
+            ptrROIarray[5 * insertLocation + 2] = real_facesize_width;
+            ptrROIarray[5 * insertLocation + 3] = real_facesize_height;
+
             //frame = 0;
-            ptrROIarray[5 * insetLocation + 4] = 0;
+            ptrROIarray[5 * insertLocation + 4] = 0;
+
             findFlag = false;
-            insetLocation = -1;
+            insertLocation = -1;
         }
     }
 
@@ -231,17 +242,63 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         Mat img_mosaic = img_result(face_area);
 
         MosaicImage(img_mosaic);
+
+        for(int preFrameFaceIndex = 0; preFrameFaceIndex < realArrayIndex; preFrameFaceIndex++){
+            // width == 0?
+            if(ptrROIarray[5 * preFrameFaceIndex + 2] == 0)
+            {
+                if(findFlag == false)
+                {
+                    insertLocation = preFrameFaceIndex;
+                    findFlag = true;
+                }
+            }
+                // 근처에 있는지 판별 해야함
+            else{
+                // x + 1/4width < this.x < x + 3/4width && y + 1/4height < this.y < y + 3 / 4 height 이면 같은 rect이다
+                if(ptrROIarray[5 * preFrameFaceIndex] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2] < real_facesize_x + (double)1 / 2 * real_facesize_width
+                    && real_facesize_x + (double)1 / 2 * real_facesize_width < ptrROIarray[5 * preFrameFaceIndex] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 2]
+                   && ptrROIarray[5 * preFrameFaceIndex + 1] + (double)1 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3] < real_facesize_y + (double)1 / 2 * real_facesize_height
+                   && real_facesize_y + (double)1 / 2 * real_facesize_height < ptrROIarray[5 * preFrameFaceIndex + 1] + (double)3 / 4 * ptrROIarray[5 * preFrameFaceIndex + 3]
+                        ){
+                    ptrROIarray[5 * preFrameFaceIndex] = real_facesize_x;
+                    ptrROIarray[5 * preFrameFaceIndex + 1] = real_facesize_y;
+                    ptrROIarray[5 * preFrameFaceIndex + 2] = real_facesize_width;
+                    ptrROIarray[5 * preFrameFaceIndex + 3] = real_facesize_height;
+                    ptrROIarray[5 * preFrameFaceIndex + 4] = 0;
+
+                    rectFlag = true;
+
+                    break;
+                }
+            }
+        }
+
+        // empty element를 찾고, 같은 rect를 찾지 못하였을때
+        if(findFlag == true && insertLocation > -1 && rectFlag == false)
+        {
+            // insetLocation자리에넣는다.
+            ptrROIarray[5 * insertLocation] = real_facesize_x;
+            ptrROIarray[5 * insertLocation + 1] = real_facesize_y;
+            ptrROIarray[5 * insertLocation + 2] = real_facesize_width;
+            ptrROIarray[5 * insertLocation + 3] = real_facesize_height;
+
+            //frame = 0;
+            ptrROIarray[5 * insertLocation + 4] = 0;
+
+            findFlag = false;
+            insertLocation = -1;
+        }
     }
 
-
     // pre Frame face mosaic
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < realArrayIndex; i++)
     {
         // width !=0 && frame != 0
         if( ptrROIarray[2 + 5 * i] != 0 && ptrROIarray[4 + 5 * i] != 0)
         {
-            // 프레임이 40 넘으면 (40프레임 이상 기존의 rect 불러왔으면)
-            if(ptrROIarray[4 + 5 * i] > 4)
+            // 프레임이 어느정도 넘으면 (어느 프레임 이상 기존의 rect 불러왔으면)
+            if(ptrROIarray[4 + 5 * i] > 5)
             {
                 // 초기화
                 ptrROIarray[5 * i] = 0;
@@ -252,7 +309,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
                 continue;
             }
-
             Rect face_area( ptrROIarray[5 * i],ptrROIarray[5 * i + 1],ptrROIarray[5 * i + 2],ptrROIarray[5 * i + 3] );
 
             Mat img_mosaic = img_result(face_area);
@@ -261,5 +317,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         }
     }
 
+
+    env -> ReleaseDoubleArrayElements(ROIarray, ptrROIarray, 0);
 }
 
