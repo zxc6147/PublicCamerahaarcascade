@@ -97,6 +97,32 @@ void MosaicImage(Mat& img_mosaic)
     resize(img_temp, img_mosaic, originSize);
 }
 
+void MosaicImage(Mat& img_mosaic, Mat& img_origin)
+{
+    Mat img_temp;
+
+    Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
+
+    resize(img_mosaic, img_temp, Size(25, 25));
+
+    resize(img_temp, img_mosaic, originSize);
+
+    for(int x = 0; x < img_mosaic.rows; ++x)
+    {
+        for(int y = 0; y < img_mosaic.cols; ++y )
+        {
+            Vec4b &pixel = img_mosaic.at<Vec4b>(x,y);
+
+            if(pixel[0] <= 10  && pixel[1] <= 10  && pixel[2] <= 10)
+            {
+                pixel[0] = img_origin.at<Vec4b>(x,y)[0];
+                pixel[1] = img_origin.at<Vec4b>(x,y)[1];
+                pixel[2] = img_origin.at<Vec4b>(x,y)[2];
+            }
+        }
+    }
+}
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject thiz,
@@ -186,15 +212,21 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         // black mask
         Mat mask(roi.size(), roi.type(), Scalar::all(0));
 
-        Mat whiteMask(roi.size(), roi.type(), Scalar::all(255));
-
         circle(mask, Point(radius, radius), radius, Scalar::all(255), -1);
 
         Mat eye_cropped = roi2&mask;
 
         roi2 &= eye_cropped;
 
-        MosaicImage((roi2));
+        //MosaicImage((roi2));
+
+        MosaicImage(roi2, roi);
+
+
+
+
+        // face roi 흰 바탕화면
+        rectangle(img_result, face_area, Scalar::all(255), -1);
 
         roi &= roi2;
 
