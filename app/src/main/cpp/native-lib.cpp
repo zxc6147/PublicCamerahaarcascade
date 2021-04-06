@@ -116,7 +116,7 @@ void MosaicImage(Mat& img_mosaic, Mat& img_origin)
         {
             Vec4b &pixel = img_mosaic.at<Vec4b>(x,y);
 
-            if(pixel[0] <= 10  && pixel[1] <= 10  && pixel[2] <= 10)
+            if(pixel[0] == 0  && pixel[1] == 0  && pixel[2] == 0)
             {
                 pixel[0] = img_origin.at<Vec4b>(x,y)[0];
                 pixel[1] = img_origin.at<Vec4b>(x,y)[1];
