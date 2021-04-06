@@ -92,7 +92,7 @@ void MosaicImage(Mat& img_mosaic)
 
     Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
 
-    resize(img_mosaic, img_temp, Size(9, 9));
+    resize(img_mosaic, img_temp, Size(25, 25));
 
     resize(img_temp, img_mosaic, originSize);
 }
@@ -161,25 +161,44 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         double w_temp = faces[i].width / resizeRatio;
 
-        double real_facesize_x = faces[i].x / resizeRatio + 0.2 * w_temp;
+        double real_facesize_x = faces[i].x / resizeRatio;
 
         double h_temp = faces[i].height / resizeRatio;
 
-        double real_facesize_y = faces[i].y / resizeRatio + h_temp * 0.2;
+        double real_facesize_y = faces[i].y / resizeRatio;
 
-        double real_facesize_width = w_temp * 0.6;
+        double real_facesize_width = w_temp;
 
-        double real_facesize_height = h_temp * 0.6;
+        double real_facesize_height = h_temp;
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width, real_facesize_height);
 
-        //rectangle(img_result, face_area, Scalar(0,0,255), 5, LINE_8, 0);
-
         // shallow copy
-        Mat img_mosaic = img_result(face_area);
+        //Mat img_mosaic = img_result(face_area);
 
-        MosaicImage(img_mosaic);
+        Point center(real_facesize_x + real_facesize_width/2, real_facesize_y + real_facesize_height/2);
 
+        int radius = real_facesize_width/2;
+
+        Mat roi(img_result, face_area);
+        Mat roi2 = roi.clone();
+
+        // black mask
+        Mat mask(roi.size(), roi.type(), Scalar::all(0));
+
+        Mat whiteMask(roi.size(), roi.type(), Scalar::all(255));
+
+        circle(mask, Point(radius, radius), radius, Scalar::all(255), -1);
+
+        Mat eye_cropped = roi2&mask;
+
+        roi2 &= eye_cropped;
+
+        MosaicImage((roi2));
+
+        roi &= roi2;
+
+        /*
         for(int preFrameFaceIndex = 0; preFrameFaceIndex < realArrayIndex; preFrameFaceIndex++){
             // width == 0?
             if(ptrROIarray[5 * preFrameFaceIndex + 2] == 0)
@@ -225,9 +244,13 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             findFlag = false;
             insertLocation = -1;
         }
+         */
     }
 
 
+
+
+    /*
     //side face
     for (int i = 0; i < side_faces.size(); i++) {
 
@@ -325,6 +348,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         }
     }
 
+     */
     env -> ReleaseDoubleArrayElements(ROIarray, ptrROIarray, 0);
 }
 
