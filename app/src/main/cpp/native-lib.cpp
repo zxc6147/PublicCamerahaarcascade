@@ -97,6 +97,7 @@ void MosaicImage(Mat& img_mosaic)
     resize(img_temp, img_mosaic, originSize);
 }
 
+
 void MosaicImage(Mat& img_mosaic, Mat& img_origin)
 {
     Mat img_temp;
@@ -105,7 +106,7 @@ void MosaicImage(Mat& img_mosaic, Mat& img_origin)
 
     Size originSize = Size(mosaicedOriginImage.rows, mosaicedOriginImage.cols);
 
-    resize(mosaicedOriginImage, img_temp, Size(25, 25));
+    resize(mosaicedOriginImage, img_temp, Size(16, 16));
 
     resize(img_temp, mosaicedOriginImage, originSize);
 
@@ -172,7 +173,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     float resizeRatio = resize(img_gray, img_resize, 495);
 
-
     //-- Detect faces
 
     ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 4, 0, Size(15, 15) );
@@ -196,15 +196,15 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         double w_temp = faces[i].width / resizeRatio;
 
-        double real_facesize_x = faces[i].x / resizeRatio;
+        double real_facesize_x = faces[i].x / resizeRatio + 0.15 * w_temp;
 
         double h_temp = faces[i].height / resizeRatio;
 
-        double real_facesize_y = faces[i].y / resizeRatio;
+        double real_facesize_y = faces[i].y / resizeRatio + 0.15 * w_temp;
 
-        double real_facesize_width = w_temp;
+        double real_facesize_width = w_temp * 0.7;
 
-        double real_facesize_height = h_temp;
+        double real_facesize_height = h_temp * 0.7;
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width, real_facesize_height);
 
@@ -221,18 +221,14 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         // black mask
         Mat mask(roi.size(), roi.type(), Scalar::all(0));
 
+        // white circle in mask
         circle(mask, Point(radius, radius), radius, Scalar::all(255), -1);
 
         Mat eye_cropped = roi2&mask;
 
         roi2 &= eye_cropped;
 
-        //MosaicImage((roi2));W
-
         MosaicImage(roi2, roi);
-
-
-
 
         // face roi 흰 바탕화면
         rectangle(img_result, face_area, Scalar::all(255), -1);
