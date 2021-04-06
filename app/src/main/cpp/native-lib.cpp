@@ -104,7 +104,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                                                          jlong cascade_classifier_eye,
                                                          jlong mat_addr_input,
                                                          jlong mat_addr_result, jdoubleArray ROIarray) {
-
     Mat &img_input = *(Mat *) mat_addr_input;
 
     Mat &img_result = *(Mat *) mat_addr_result;
@@ -125,19 +124,19 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
     Mat img_resize;
 
-    float resizeRatio = resize(img_gray, img_resize, 495);
-
+    float resizeRatio = resize(img_gray, img_resize, 640);
 
 
     //-- Detect faces
 
-    /*
-
     ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(30, 30) );
+
+
 
     __android_log_print(ANDROID_LOG_DEBUG, (char *) "native-lib :: ",
 
                         (char *) "face %d found ", faces.size());
+
 
     for (int i = 0; i < faces.size(); i++) {
 
@@ -149,45 +148,30 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         double real_facesize_height = faces[i].height / resizeRatio;
 
+
         Point center( real_facesize_x + real_facesize_width / 2, real_facesize_y + real_facesize_height/2);
-
-        ellipse(img_result, center, Size( real_facesize_width / 2, real_facesize_height / 2), 0, 0, 360,
-
-                Scalar(255, 0, 255), 30, 8, 0);
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
+        Mat faceROI = img_gray( face_area );
 
-        //Mat faceROI = img_gray( face_area );
+        std::vector<Rect> eyes;
+
+
+        //-- In each face, detect eyes
+
+        ((CascadeClassifier *) cascade_classifier_eye)->detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CASCADE_SCALE_IMAGE, Size(30, 30) );
+
+
+        for ( size_t j = 0; j < eyes.size(); j++ )
+        {
+
+            Point eye_center( real_facesize_x + eyes[j].x + eyes[j].width/2, real_facesize_y + eyes[j].y + eyes[j].height/2 );
+
+            int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+
+            circle( img_result, eye_center, radius, Scalar( 255, 0, 0 ), 10, 8, 0 );
+        }
     }
-*/
-    std::vector<Rect> eyes;
-
-
-    //-- In each face, detect eyes
-
-    ((CascadeClassifier *) cascade_classifier_eye)->detectMultiScale( img_resize, eyes, 1.1, 2, 0 |CASCADE_SCALE_IMAGE, Size(5, 5) );
-
-
-    for ( size_t i = 0; i < eyes.size(); i++ )
-    {
-
-        double real_facesize_x = eyes[i].x / resizeRatio;
-
-        double real_facesize_y = eyes[i].y / resizeRatio;
-
-        double real_facesize_width = eyes[i].width / resizeRatio;
-
-        double real_facesize_height = eyes[i].height / resizeRatio;
-
-        Point eye_center( real_facesize_x + real_facesize_width/2, real_facesize_y + real_facesize_height/2 );
-
-        int radius = cvRound( (eyes[i].width + eyes[i].height)*0.25 );
-
-        circle( img_result, eye_center, radius, Scalar( 255, 0, 0 ), 10, 8, 0 );
-
-    }
-
-
 }
 
