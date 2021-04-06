@@ -13,6 +13,8 @@
         android:layout_height="match_parent"
         android:layout_gravity="top"
         android:layout_weight="100"
+        opencv:show_fps="true"
+        opencv:camera_id="any"
      />
 
     <LinearLayout

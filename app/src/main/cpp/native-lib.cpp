@@ -84,22 +84,19 @@ Java_com_example_opencvcameraexample_MainActivity_loadCascade(JNIEnv *env, jobje
     return ret;
 }
 
-void MosaicImage(Mat& img_mosaic)
+void MosaicImage(Mat& img_origin, int radius)
 {
-    //__android_log_print(ANDROID_LOG_DEBUG, "ASDF", "INIT");
+    Mat img_mosaic = img_origin.clone();
 
-    Mat img_temp;
+    Mat mask(img_origin.size(), img_origin.type(), Scalar::all(0));
 
-    Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
+    circle(mask, Point(radius, radius), radius, Scalar::all(255), -1);
 
-    resize(img_mosaic, img_temp, Size(25, 25));
+    Mat eye_cropped = img_mosaic&mask;
 
-    resize(img_temp, img_mosaic, originSize);
-}
+    img_mosaic &= eye_cropped;
 
 
-void MosaicImage(Mat& img_mosaic, Mat& img_origin)
-{
     Mat img_temp;
 
     Mat mosaicedOriginImage = img_origin.clone();
@@ -130,7 +127,11 @@ void MosaicImage(Mat& img_mosaic, Mat& img_origin)
                 pixel[2] = mosaicedOriginImage.at<Vec4b>(x,y)[2];
             }
         }
-        }
+    }
+
+    // face roi 흰 바탕화면
+    rectangle(img_origin, Rect(0, 0, img_origin.rows, img_origin.cols), Scalar::all(255), -1);
+    img_origin &= img_mosaic;
 }
 
 extern "C"
@@ -140,14 +141,12 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                                                          jlong cascade_classifier_side_face,
                                                          jlong mat_addr_input,
                                                          jlong mat_addr_result, jdoubleArray ROIarray) {
-
     // not copy
     jdouble *ptrROIarray = env -> GetDoubleArrayElements(ROIarray, JNI_FALSE);
 
     int size = env->GetArrayLength(ROIarray);
 
     int realArrayIndex = size / 5;
-
 
     // frame 1씩 더해줌
     for(int i = 0; i < 10; i++)
@@ -174,12 +173,10 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
     float resizeRatio = resize(img_gray, img_resize, 495);
 
     //-- Detect faces
-
-    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 4, 0, Size(15, 15) );
-    ((CascadeClassifier *) cascade_classifier_side_face)->detectMultiScale( img_resize, side_faces, 1.1, 4, 0, Size(15, 15) );
+    ((CascadeClassifier *) cascade_classifier_face)->detectMultiScale( img_resize, faces, 1.1, 4, 0, Size(20, 20) );
+    ((CascadeClassifier *) cascade_classifier_side_face)->detectMultiScale( img_resize, side_faces, 1.1, 4, 0, Size(20, 20) );
 
     __android_log_print(ANDROID_LOG_DEBUG, (char *) "native-lib :: ",
-
                         (char *) "face %d found ", faces.size());
 
     // 배열 안에 근처의 사각형 있다 없다 나타내는 flag
@@ -208,34 +205,12 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width, real_facesize_height);
 
-        // shallow copy
-        //Mat img_mosaic = img_result(face_area);
-
-        Point center(real_facesize_x + real_facesize_width/2, real_facesize_y + real_facesize_height/2);
-
         int radius = real_facesize_width/2;
 
         Mat roi(img_result, face_area);
-        Mat roi2 = roi.clone();
 
-        // black mask
-        Mat mask(roi.size(), roi.type(), Scalar::all(0));
+        MosaicImage(roi, radius);
 
-        // white circle in mask
-        circle(mask, Point(radius, radius), radius, Scalar::all(255), -1);
-
-        Mat eye_cropped = roi2&mask;
-
-        roi2 &= eye_cropped;
-
-        MosaicImage(roi2, roi);
-
-        // face roi 흰 바탕화면
-        rectangle(img_result, face_area, Scalar::all(255), -1);
-
-        roi &= roi2;
-
-        /*
         for(int preFrameFaceIndex = 0; preFrameFaceIndex < realArrayIndex; preFrameFaceIndex++){
             // width == 0?
             if(ptrROIarray[5 * preFrameFaceIndex + 2] == 0)
@@ -260,7 +235,6 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
                    ptrROIarray[5 * preFrameFaceIndex + 4] = 0;
 
                    rectFlag = true;
-
                    break;
                }
             }
@@ -281,16 +255,12 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
             findFlag = false;
             insertLocation = -1;
         }
-         */
     }
 
 
-
-
-    /*
     //side face
     for (int i = 0; i < side_faces.size(); i++) {
-
+        //
         double w_temp = side_faces[i].width / resizeRatio;
 
         double real_facesize_x = side_faces[i].x / resizeRatio + 0.2 * w_temp;
@@ -305,10 +275,12 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         Rect face_area(real_facesize_x, real_facesize_y, real_facesize_width,real_facesize_height);
 
-        // shallow copy
-        Mat img_mosaic = img_result(face_area);
+        //
+        int radius = real_facesize_width/2;
 
-        MosaicImage(img_mosaic);
+        Mat roi(img_result, face_area);
+
+        MosaicImage(roi, radius);
 
         for(int preFrameFaceIndex = 0; preFrameFaceIndex < realArrayIndex; preFrameFaceIndex++){
             // width == 0?
@@ -359,6 +331,8 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
         }
     }
 
+
+
     // pre Frame face mosaic
     for (int i = 0; i < realArrayIndex; i++)
     {
@@ -381,11 +355,10 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
             Mat img_mosaic = img_result(face_area);
 
-            MosaicImage(img_mosaic);
+            MosaicImage(img_mosaic, ptrROIarray[5 * i + 2]/2);
         }
     }
 
-     */
     env -> ReleaseDoubleArrayElements(ROIarray, ptrROIarray, 0);
 }
 

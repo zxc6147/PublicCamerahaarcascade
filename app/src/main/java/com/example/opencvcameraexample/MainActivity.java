@@ -305,7 +305,6 @@ public class MainActivity extends AppCompatActivity
         if (mOpenCvCameraView != null)
         {
             mOpenCvCameraView.setBackgroundColor(Color.BLACK);
-
         }
     }
 
@@ -313,7 +312,6 @@ public class MainActivity extends AppCompatActivity
     public void onBackPressed()
     {
         mOpenCvCameraView.setBackgroundColor(Color.BLACK);
-
         try{
             sleep(100);
             super.onBackPressed();
@@ -359,49 +357,20 @@ public class MainActivity extends AppCompatActivity
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
-        if(isVideo == false)
-        {
-            try {
-                getWriteLock();
-                matInput = inputFrame.rgba();
-                if (matResult == null)
-                    matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
-                //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-                if(cameraIndex == 1)
-                    Core.flip(matInput, matInput, 1); // 가로
+        try {
+            getWriteLock();
+            matInput = inputFrame.rgba();
+            if (matResult == null)
+                matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
+            //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
+            if(cameraIndex == 1)
+                Core.flip(matInput, matInput, 1); // 가로
 
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
-            } catch (InterruptedException e){
-                e.printStackTrace();
-            }
-
-            releaseWriteLock();
-        } else {
-            try {
-                getWriteLock();
-                matInput = inputFrame.rgba();
-                if (matResult == null) {
-                    matResult = new Mat(matInput.rows(), matInput.cols(), matInput.type());
-                }
-                else {
-                }
-
-                //ConvertRGBtoGray(matInput.getNativeObjAddr(), matResult.getNativeObjAddr());
-                if(cameraIndex == 1)
-                    Core.flip(matInput, matInput, 1); // 가로
-
-                detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
-
-                //Log.d("aaaaaaaaaaaa", "" + matResult.width() + "     " + inputFrame.rgba().width());
-                //videoWriter.write(matResult);
-            } catch (InterruptedException e)
-            {
-                Log.d("aaaaa", "          e            ");
-                e.printStackTrace();
-            }
-            releaseWriteLock();
+            detect(cascadeClassifier_face, cascadeClassifier_side_face, matInput.getNativeObjAddr(), matResult.getNativeObjAddr(), ROIarray);
+        } catch (InterruptedException e){
+            e.printStackTrace();
         }
-
+        releaseWriteLock();
 
         return matResult;
     }
@@ -414,7 +383,6 @@ public class MainActivity extends AppCompatActivity
 
     //여기서부턴 퍼미션 관련 메소드
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
-
 
     protected void onCameraPermissionGranted() {
         List<? extends CameraBridgeViewBase> cameraViews = getCameraViewList();
