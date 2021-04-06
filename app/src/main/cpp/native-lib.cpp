@@ -101,11 +101,14 @@ void MosaicImage(Mat& img_mosaic, Mat& img_origin)
 {
     Mat img_temp;
 
-    Size originSize = Size(img_mosaic.rows, img_mosaic.cols);
+    Mat mosaicedOriginImage = img_origin.clone();
 
-    resize(img_mosaic, img_temp, Size(25, 25));
+    Size originSize = Size(mosaicedOriginImage.rows, mosaicedOriginImage.cols);
 
-    resize(img_temp, img_mosaic, originSize);
+    resize(mosaicedOriginImage, img_temp, Size(25, 25));
+
+    resize(img_temp, mosaicedOriginImage, originSize);
+
 
     for(int x = 0; x < img_mosaic.rows; ++x)
     {
@@ -119,8 +122,14 @@ void MosaicImage(Mat& img_mosaic, Mat& img_origin)
                 pixel[1] = img_origin.at<Vec4b>(x,y)[1];
                 pixel[2] = img_origin.at<Vec4b>(x,y)[2];
             }
+            else
+            {
+                pixel[0] = mosaicedOriginImage.at<Vec4b>(x,y)[0];
+                pixel[1] = mosaicedOriginImage.at<Vec4b>(x,y)[1];
+                pixel[2] = mosaicedOriginImage.at<Vec4b>(x,y)[2];
+            }
         }
-    }
+        }
 }
 
 extern "C"
@@ -218,7 +227,7 @@ Java_com_example_opencvcameraexample_MainActivity_detect(JNIEnv *env, jobject th
 
         roi2 &= eye_cropped;
 
-        //MosaicImage((roi2));
+        //MosaicImage((roi2));W
 
         MosaicImage(roi2, roi);
 
